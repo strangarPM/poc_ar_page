@@ -1,71 +1,38 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>AR Placement</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script>
-      AFRAME.registerComponent("ar-hit-test", {
-        init: function () {
-          const scene = this.el.sceneEl;
-          const model = document.querySelector("#model");
-          let hitTestSource = null;
-          let localReferenceSpace = null;
-
-          scene.renderer.xr.addEventListener("sessionstart", async () => {
-            const session = scene.renderer.xr.getSession();
-
-            const viewerSpace = await session.requestReferenceSpace("viewer");
-            hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-
-            localReferenceSpace = await session.requestReferenceSpace("local");
-
-            session.addEventListener("select", () => {
-              if (this.position) {
-                model.object3D.position.copy(this.position);
-                model.setAttribute("visible", true);
-              }
-            });
-          });
-
-          this.el.sceneEl.addEventListener("beforexrframe", (time, frame) => {
-            if (!hitTestSource) return;
-
-            const xrViewerPose = frame.getViewerPose(localReferenceSpace);
-            if (xrViewerPose) {
-              const hitTestResults = frame.getHitTestResults(hitTestSource);
-              if (hitTestResults.length > 0) {
-                const hit = hitTestResults[0];
-                const pose = hit.getPose(localReferenceSpace);
-
-                this.position = new THREE.Vector3(
-                  pose.transform.position.x,
-                  pose.transform.position.y,
-                  pose.transform.position.z
-                );
-              }
-            }
-          });
-        }
-      });
-    </script>
+    <title>AR Spaghetti Object</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      model-viewer { width: 100vw; height: 100vh; }
+      #ar-button {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 14px 22px;
+        font-size: 16px;
+        border-radius: 12px;
+        background: #111;
+        color: white;
+        border: none;
+      }
+    </style>
   </head>
 
-  <body style="margin: 0; overflow: hidden;">
-    <a-scene
-      renderer="colorManagement: true;"
-      webxr="optionalFeatures: hit-test;"
-      vr-mode-ui="enabled: false"
-      ar-hit-test>
-
-      <!-- Your GLTF Model -->
-      <a-entity id="model"
-        gltf-model="model.gltf"
-        visible="false"
-        scale="1 1 1">
-      </a-entity>
-
-      <a-camera></a-camera>
-    </a-scene>
+  <body>
+    <model-viewer
+      src="./source/model.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      exposure="1"
+      shadow-intensity="1"
+      xr-environment
+      ar-placement="floor">
+      
+      <button id="ar-button" slot="ar-button">Place in AR</button>
+    </model-viewer>
   </body>
 </html>
