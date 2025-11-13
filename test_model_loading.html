@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Test Model Loading Functionality</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    line-height: 1.6;
+  }
+  
+  .test-case {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .result {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+  }
+  
+  .success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+  }
+  
+  .failure {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+  }
+  
+  .input-form {
+    margin: 15px 0;
+  }
+  
+  .input-form input, .input-form button {
+    padding: 8px;
+    margin: 5px;
+  }
+  
+  .preview {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f0f8ff;
+    border: 1px solid #b8daff;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <h1>Test Model Loading Functionality</h1>
+  
+  <p>This page tests the dynamic model loading functionality for the AR viewer.</p>
+  
+  <div class="input-form">
+    <label for="modelName">Enter Model Name (without extension):</label>
+    <input type="text" id="modelName" placeholder="e.g., chickBurger">
+    <button onclick="testModelName()">Test Model Name</button>
+  </div>
+  
+  <div class="input-form">
+    <label for="modelUrl">Enter Full Model URL:</label>
+    <input type="text" id="modelUrl" placeholder="e.g., https://example.com/model.glb">
+    <button onclick="testFullUrl()">Test Full URL</button>
+  </div>
+  
+  <div class="input-form">
+    <label for="invalidInput">Enter Invalid Input:</label>
+    <input type="text" id="invalidInput" placeholder="e.g., invalid input">
+    <button onclick="testInvalid()">Test Invalid Input</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    // Include the same functions from index.html for testing
+    function generateModelPaths(modelName) {
+      // If modelName includes a file extension, treat it as a full URL
+      if (modelName && modelName.includes('.')) {
+        return { src: modelName, iosSrc: modelName };
+      }
+
+      // Otherwise, treat as model name and generate paths
+      return {
+        src: `${modelName}.glb`,
+        iosSrc: `${modelName}.usdz`
+      };
+    }
+    
+    function validateModelUrl(url) {
+      try {
+        // Check if the URL is valid
+        new URL(url);
+        
+        // Check if the URL has a valid 3D model extension
+        const validExtensions = ['.glb', '.gltf', '.usdz', '.fbx', '.obj'];
+        const lowerUrl = url.toLowerCase();
+        return validExtensions.some(ext => lowerUrl.includes(ext));
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function testModelName() {
+      const modelName = document.getElementById('modelName').value;
+      const resultsDiv = document.getElementById('results');
+      
+      if (!modelName) {
+        alert('Please enter a model name first');
+        return;
+      }
+      
+      const testId = Date.now(); // Unique ID for this test
+      const modelPaths = generateModelPaths(modelName);
+      
+      let resultHTML = `
+        <div class="test-case" id="test-${testId}">
+          <h3>Test Case: Model Name Input</h3>
+          <p><strong>Input:</strong> ${modelName}</p>
+          <p><strong>Generated src:</strong> ${modelPaths.src}</p>
+          <p><strong>Generated ios-src:</strong> ${modelPaths.iosSrc}</p>
+          
+          <div class="result success">
+            <strong>Result:</strong> SUCCESS - Model paths generated correctly
+          </div>
+          
+          <div class="preview">
+            <strong>Example URL with this model:</strong><br>
+            <a href="index.html?model=${modelName}" target="_blank">http://localhost:8000/index.html?model=${modelName}</a>
+          </div>
+        </div>
+      `;
+      
+      resultsDiv.innerHTML = resultHTML + resultsDiv.innerHTML;
+    }
+    
+    function testFullUrl() {
+      const modelUrl = document.getElementById('modelUrl').value;
+      const resultsDiv = document.getElementById('results');
+      
+      if (!modelUrl) {
+        alert('Please enter a model URL first');
+        return;
+      }
+      
+      const testId = Date.now(); // Unique ID for this test
+      const isValid = validateModelUrl(modelUrl);
+      
+      let resultHTML = `
+        <div class="test-case" id="test-${testId}">
+          <h3>Test Case: Full URL Input</h3>
+          <p><strong>Input:</strong> ${modelUrl}</p>
+          <p><strong>Is Valid URL:</strong> ${isValid ? 'Yes' : 'No'}</p>
+          
+          <div class="result ${isValid ? 'success' : 'failure'}">
+            <strong>Result:</strong> ${isValid ? 'SUCCESS' : 'FAILURE'} - ${isValid ? 'Valid model URL' : 'Invalid model URL'}
+          </div>
+          
+          <div class="preview">
+            <strong>Example URL with this model:</strong><br>
+            <a href="index.html?model=${encodeURIComponent(modelUrl)}" target="_blank">http://localhost:8000/index.html?model=${encodeURIComponent(modelUrl)}</a>
+          </div>
+        </div>
+      `;
+      
+      resultsDiv.innerHTML = resultHTML + resultsDiv.innerHTML;
+    }
+    
+    function testInvalid() {
+      const invalidInput = document.getElementById('invalidInput').value;
+      const resultsDiv = document.getElementById('results');
+      
+      if (!invalidInput) {
+        alert('Please enter an invalid input first');
+        return;
+      }
+      
+      const testId = Date.now(); // Unique ID for this test
+      const isValid = validateModelUrl(invalidInput);
+      
+      // Check if it's treated as a model name (no extension)
+      let modelPaths = null;
+      if (invalidInput && !invalidInput.includes('.')) {
+        modelPaths = generateModelPaths(invalidInput);
+      }
+      
+      let resultHTML = `
+        <div class="test-case" id="test-${testId}">
+          <h3>Test Case: Invalid Input</h3>
+          <p><strong>Input:</strong> ${invalidInput}</p>
+          <p><strong>Is Valid Model URL:</strong> ${isValid ? 'Yes' : 'No'}</p>
+      `;
+      
+      if (modelPaths) {
+        resultHTML += `
+          <p><strong>Generated as Model Name:</strong></p>
+          <p>src: ${modelPaths.src}</p>
+          <p>ios-src: ${modelPaths.iosSrc}</p>
+          <div class="result success">
+            <strong>Result:</strong> SUCCESS - Treated as model name
+          </div>
+        `;
+      } else {
+        resultHTML += `
+          <div class="result failure">
+            <strong>Result:</strong> FAILURE - Invalid input
+          </div>
+        `;
+      }
+      
+      resultHTML += `
+        </div>
+      `;
+      
+      resultsDiv.innerHTML = resultHTML + resultsDiv.innerHTML;
+    }
+    
+    // Test some predefined cases automatically
+    window.onload = function() {
+      // Test case 1: Valid model name
+      document.getElementById('modelName').value = 'chickBurger';
+      testModelName();
+      
+      // Test case 2: Valid URL
+      document.getElementById('modelUrl').value = 'https://example.com/models/chickBurger.glb';
+      testFullUrl();
+      
+      // Test case 3: Invalid input
+      document.getElementById('invalidInput').value = 'not_a_valid_model';
+      testInvalid();
+    };
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta charset="UTF-8" />
-<title>Pizza AR Viewer</title>
+<title>Dynamic AR Model Viewer</title>
 
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
@@ -26,7 +26,7 @@
     width:100%;
   }
 
-  
+
   #viewer-box {
     display:block;
     justify-content:center;
@@ -66,6 +66,13 @@
   #bottom-space {
     flex: 0 0 10%;
   }
+  
+  #error-message {
+    color: red;
+    text-align: center;
+    padding: 10px;
+    display: none;
+  }
 </style>
 </head>
 
@@ -73,8 +80,6 @@
 
 <div id="viewer-box">
   <model-viewer id="viewer"
-    src="0869c8ddd2bc40adbabe87203549ead5.glb"
-    ios-src="0869c8ddd2bc40adbabe87203549ead5.usdz"
     ar
     ar-modes="webxr scene-viewer quick-look"
     camera-controls
@@ -83,6 +88,8 @@
   </model-viewer>
 </div>
 
+<div id="error-message"></div>
+
 <!-- <div id="button-area">
   <button id="ar-button">View in your space</button>
 </div>
@@ -90,20 +97,94 @@
 <div id="bottom-space"></div> -->
 
 <script>
-  const viewer = document.querySelector("#viewer");
-  const btn = document.querySelector("#ar-button");
+  // Function to get URL parameter by name
+  function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
 
-  btn.addEventListener("click", () => {
-    if (viewer.canActivateAR) viewer.activateAR();
-    else viewer.dispatchEvent(new CustomEvent('ar-trigger'));
-  });
+  // Function to validate the model URL
+  function validateModelUrl(url) {
+    // Check if the URL has a valid 3D model extension
+    const validExtensions = ['.glb', '.gltf', '.usdz', '.fbx', '.obj'];
+    const lowerUrl = url.toLowerCase();
+    return validExtensions.some(ext => lowerUrl.includes(ext));
+  }
+
+  // Function to generate file paths from model name
+  function generateModelPaths(modelName) {
+    // If modelName includes a file extension, treat it as a path/URL
+    if (modelName && modelName.includes('.')) {
+      return { src: modelName, iosSrc: modelName };
+    }
+
+    // Otherwise, treat as model name and generate relative paths in the project
+    return {
+      src: `${modelName}.glb`,
+      iosSrc: `${modelName}.usdz`
+    };
+  }
+
+  // Get the model name from the 'model' parameter
+  const modelName = getUrlParameter('model');
+  const iosModelName = getUrlParameter('ios-model'); // Allow override via ios-model param
+
+  // Validate and set the model source
+  if (modelName) {
+    const viewer = document.querySelector("#viewer");
+    
+    // Generate paths for the model
+    const modelPaths = generateModelPaths(modelName);
+    viewer.setAttribute('src', modelPaths.src);
+    
+    // Set iOS source - if specific iOS model is provided, validate and use it
+    if (iosModelName) {
+      // If the iosModelName has an extension, treat as full path/URL
+      if (iosModelName.includes('.')) {
+        if (validateModelUrl(iosModelName)) {
+          viewer.setAttribute('ios-src', iosModelName);
+        } else {
+          console.warn('Invalid iOS model provided, using default iOS model as fallback');
+          viewer.setAttribute('ios-src', modelPaths.iosSrc);
+        }
+      } else {
+        // If iosModelName doesn't have an extension, generate path with .usdz extension
+        viewer.setAttribute('ios-src', `${iosModelName}.usdz`);
+      }
+    } else {
+      // Use generated iOS model path
+      viewer.setAttribute('ios-src', modelPaths.iosSrc);
+    }
+  } else {
+    // Show error for missing model parameter
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.textContent = 'No model provided. Please add ?model=MODEL_NAME (e.g., chickBurger for chickBurger.glb) to the URL.';
+    errorMessage.style.display = 'block';
+  }
+
+  // AR button functionality
+  const btn = document.querySelector("#ar-button");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const viewer = document.querySelector("#viewer");
+      if (viewer && viewer.canActivateAR) {
+        viewer.activateAR();
+      } else if (viewer) {
+        viewer.dispatchEvent(new CustomEvent('ar-trigger'));
+      }
+    });
+  }
 
   // When AR closes → show button again automatically
-  viewer.addEventListener('ar-status', (event) => {
-    if (event.detail.status === 'not-presenting') {
-      btn.style.display = "flex";
-    }
-  });
+  const viewer = document.querySelector("#viewer");
+  if (viewer) {
+    viewer.addEventListener('ar-status', (event) => {
+      const btn = document.querySelector("#ar-button");
+      if (btn && event.detail.status === 'not-presenting') {
+        btn.style.display = "flex";
+      }
+    });
+  }
 </script>
 
 </body>

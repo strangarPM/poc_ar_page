@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>Pizza AR Viewer</title>
+
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+<style>
+  body {
+    margin:0;
+    background:#fff;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+
+  /* Model Takes ~70% of Screen */
+  #viewer-box {
+    flex: 0 0 70%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    width:100%;
+  }
+
+  
+  #viewer-box {
+    display:block;
+    justify-content:center;
+    align-items:center;
+    width:100vw;
+    height:90vh;
+  }
+
+  model-viewer {
+    width:100%;
+    height:100%;
+    background:#fff;
+  }
+
+  /* AR Button Area (~20% of screen) */
+  #button-area {
+    flex: 0 0 20%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+
+  #ar-button {
+    background:black;
+    color:white;
+    border:none;
+    padding:14px 22px;
+    font-size:18px;
+    border-radius:8px;
+    cursor:pointer;
+    width: 70%;
+    max-width:260px;
+    text-align:center;
+  }
+
+  /* Bottom Spacing (~10%) */
+  #bottom-space {
+    flex: 0 0 10%;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="viewer-box">
+  <model-viewer id="viewer"
+    src="pizza.glb"
+    ios-src="pizza.usdz"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    camera-controls
+    shadow-intensity="1"
+    exposure="1.2">
+  </model-viewer>
+</div>
+
+<!-- <div id="button-area">
+  <button id="ar-button">View in your space</button>
+</div>
+
+<div id="bottom-space"></div> -->
+
+<script>
+  const viewer = document.querySelector("#viewer");
+  const btn = document.querySelector("#ar-button");
+
+  btn.addEventListener("click", () => {
+    if (viewer.canActivateAR) viewer.activateAR();
+    else viewer.dispatchEvent(new CustomEvent('ar-trigger'));
+  });
+
+  // When AR closes → show button again automatically
+  viewer.addEventListener('ar-status', (event) => {
+    if (event.detail.status === 'not-presenting') {
+      btn.style.display = "flex";
+    }
+  });
+</script>
+
+</body>
+</html>
